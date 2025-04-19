@@ -1,0 +1,7 @@
+streamlit
+pandas
+requests
+# Add specific LLM SDKs if you use them, e.g.:
+# openai
+# anthropic
+# google-generativeai
