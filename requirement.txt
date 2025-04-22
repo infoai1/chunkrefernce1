@@ -2,5 +2,7 @@ streamlit
 pandas
 requests
 openai
-# anthropic  # Keep others commented if you don't use them
-# google-generativeai # Keep others commented if you don't use them
+python-dotenv
+# Add other LLM SDKs ONLY if you install and use them:
+# anthropic
+# google-generativeai
