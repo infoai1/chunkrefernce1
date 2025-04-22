@@ -44,7 +44,7 @@ JSON Output:
 """
 
 # --- Function to call OpenAI ---
-def call_openai_api(api_key, text_chunk, model="gpt-4o"): # <<< FIXED: Changed model to "gpt-4o" (a valid, current model)
+def call_openai_api(api_key, text_chunk, model="gpt-4.1-2025-04-14"): # <<< FIXED: Changed model to "gpt-4o" (a valid, current model)
     # Requires 'openai' library: pip install openai
     # Make sure 'openai' is listed in your requirements.txt file and installed!
     from openai import OpenAI
