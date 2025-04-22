@@ -1,7 +1,6 @@
 streamlit
 pandas
 requests
-# Add specific LLM SDKs if you use them, e.g.:
-# openai
-# anthropic
-# google-generativeai
+openai
+# anthropic  # Keep others commented if you don't use them
+# google-generativeai # Keep others commented if you don't use them
