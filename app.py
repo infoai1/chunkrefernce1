@@ -2,10 +2,17 @@ import streamlit as st
 import pandas as pd
 from io import StringIO
 import time # For potential delays
-
+from dotenv import load_dotenv # Import the function
+load_dotenv() # Load variables from .env file into environment
 # Import functions from local modules
 from llm_integrations import get_references_from_llm
 from utils import load_csv, prepare_output_csv
+
+
+
+
+# ... rest of your app.py imports
+
 
 # --- Streamlit Page Configuration ---
 st.set_page_config(page_title="Reference Extractor", layout="wide")
