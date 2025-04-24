@@ -2,6 +2,6 @@ streamlit
 pandas
 requests
 openai
-python-dotenv
+python_dotenv
 
 
