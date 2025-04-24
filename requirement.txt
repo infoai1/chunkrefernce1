@@ -1,10 +1,5 @@
-# --- START OF FILE chunkrefernce1-main/requirement.txt ---
-
 streamlit
 pandas
 requests
 openai
 python-dotenv
-# Add other LLM SDKs ONLY if you install and use them:
-# anthropic
-# google-generativeai
