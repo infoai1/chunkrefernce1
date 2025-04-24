@@ -1,11 +1,10 @@
 import streamlit as st
-load_dotenv() # Load variables from .env file into environment (if it exists)
 import pandas as pd
 from io import StringIO, BytesIO # Keep BytesIO for output
 import time # For potential delays
 import os # Often useful, good to have
 from dotenv import load_dotenv # Import the function
-
+load_dotenv() # Load variables from .env file into environment (if it exists)
 # Import functions from local modules
 from llm_integrations import get_references_from_llm
 from utils import load_csv, prepare_output_csv
