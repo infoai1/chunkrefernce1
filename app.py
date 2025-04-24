@@ -177,39 +177,47 @@ if process_button:
             start_time = time.time()
 
             # Use st.expander for potentially long-running logs
-            with st.expander("Processing Log", expanded=False):
+            with st.expander("Processing Log", expanded=True): # Expand log by default for debugging
                 st.write(f"Starting reference extraction at {time.strftime('%Y-%m-%d %H:%M:%S')}")
                 log_placeholder = st.empty()
                 log_messages = []
 
                 for i, row in df.iterrows():
                     current_progress = (i + 1) / total_chunks
+                    chunk_processed = False # Flag to ensure something is added for every row
+
                     # Ensure text column exists in the row before accessing
-                    if text_column not in row:
-                         log_msg = f"Chunk {i+1}: Error - Text column '{text_column}' missing in this row. Skipping."
-                         log_messages.append(log_msg)
-                         log_placeholder.markdown(f"`{log_msg}`")
-                         all_extracted_references.append({
-                            "Original Text Chunk": f"Error: Column '{text_column}' not found in row {i+1}",
-                            "Error": f"Column '{text_column}' missing"
-                         })
-                         continue # Skip to next row
+                    original_chunk_text_for_output = f"Row {i+1}: Error - Invalid row data"
+                    if text_column in row:
+                        original_chunk_text_for_output = row[text_column]
+                    else:
+                        log_msg = f"Chunk {i+1}: Error - Text column '{text_column}' missing in this row. Skipping API call."
+                        log_messages.append(log_msg)
+                        log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True) # Update log display
+                        all_extracted_references.append({
+                           "Original Text Chunk": f"Error: Column '{text_column}' not found in row {i+1}",
+                           "Error": f"Column '{text_column}' missing"
+                        })
+                        chunk_processed = True # Mark as processed (error handled)
+                        progress_bar.progress(current_progress) # Update progress bar
+                        status_text.info(f"Processing chunk {i+1}/{total_chunks}... (Skipped: Missing Column)")
+                        continue # Skip API call for this row
 
-                    chunk = row[text_column]
-
+                    chunk = original_chunk_text_for_output # Use the validated chunk text
                     status_text.info(f"Processing chunk {i+1}/{total_chunks}...")
                     progress_bar.progress(current_progress)
+
 
                     # Check for valid chunk content BEFORE calling LLM
                     if pd.isna(chunk) or not isinstance(chunk, str) or not chunk.strip():
                         log_msg = f"Chunk {i+1}: Skipped (empty or invalid content)."
                         log_messages.append(log_msg)
-                        log_placeholder.markdown(f"`{log_msg}`")
-                        # Add placeholder row for skipped chunks
+                        log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True) # Update log display
                         all_extracted_references.append({
-                            "Original Text Chunk": str(chunk)[:500] + "..." if isinstance(chunk, str) and len(chunk)>500 else str(chunk), # Show original content if possible
+                            "Original Text Chunk": str(chunk)[:500] + "..." if isinstance(chunk, str) and len(chunk)>500 else str(chunk),
                             "Reference Detail": "Skipped - Empty or invalid content"
                         })
+                        chunk_processed = True
                         continue
 
                     try:
@@ -221,30 +229,31 @@ if process_button:
                             error_detail = references_or_error[0]["Error"]
                             log_msg = f"Chunk {i+1}: API/Processing Error - {error_detail}"
                             log_messages.append(log_msg)
-                            log_placeholder.markdown(f"`{log_msg}`")
+                            log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True)
                             # Append error entry to results
                             all_extracted_references.append({
                                 "Original Text Chunk": chunk,
                                 "Error": error_detail # Include the specific error
                             })
+                            chunk_processed = True
                         elif isinstance(references_or_error, list):
-                            # **** MODIFICATION START ****
-                            if not references_or_error: # Check if the list is empty
+                            # Check if the list is empty
+                            if not references_or_error:
                                 # No references found by LLM
                                 log_msg = f"Chunk {i+1}: Success - No references found."
                                 log_messages.append(log_msg)
-                                log_placeholder.markdown(f"`{log_msg}`")
+                                log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True)
                                 all_extracted_references.append({
                                     "Original Text Chunk": chunk,
                                     "Reference Detail": "No references found" # Indicate status clearly
-                                    # Other fields will be NA/NaN in the output CSV
                                 })
+                                chunk_processed = True
                             else:
                                 # References were found (original logic)
                                 ref_count = len(references_or_error)
                                 log_msg = f"Chunk {i+1}: Success - Extracted {ref_count} reference(s)."
                                 log_messages.append(log_msg)
-                                log_placeholder.markdown(f"`{log_msg}`")
+                                log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True)
                                 # Add the original chunk text to each extracted reference
                                 for ref in references_or_error:
                                    if isinstance(ref, dict): # Ensure it's a dictionary
@@ -260,16 +269,17 @@ if process_button:
                                            "Error": "Invalid reference format received from LLM",
                                            "Reference Detail": f"Raw invalid item: {str(ref)[:100]}" # Include part of invalid data
                                        })
-                            # **** MODIFICATION END ****
+                                chunk_processed = True # Mark processed even if some items were invalid
                         else:
                             # Handle case where LLM function returns something unexpected (not a list)
                             log_msg_err = f"Chunk {i+1}: Error - Unexpected return type from LLM function: {type(references_or_error)}"
                             log_messages.append(log_msg_err)
-                            log_placeholder.markdown(f"`{log_msg_err}`")
+                            log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True)
                             all_extracted_references.append({
                                 "Original Text Chunk": chunk,
                                 "Error": "Internal error: Unexpected data structure from LLM integration."
                             })
+                            chunk_processed = True
 
 
                         # Optional: Add a small delay to avoid hitting rate limits
@@ -280,12 +290,23 @@ if process_button:
                         error_msg = f"🚨 Critical Error processing chunk {i+1}: {e}"
                         st.error(error_msg) # Show prominent error in main area
                         log_messages.append(error_msg)
-                        log_placeholder.markdown(f"`{error_msg}`")
+                        log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True)
                         # Add an error entry to the results
                         all_extracted_references.append({
                             "Original Text Chunk": chunk,
                             "Error": f"App error during processing: {e}"
                         })
+                        chunk_processed = True
+
+                    # Add a placeholder if nothing else was added for this row (safety net)
+                    if not chunk_processed:
+                         log_msg_unhandled = f"Chunk {i+1}: Unhandled state - adding placeholder error."
+                         log_messages.append(log_msg_unhandled)
+                         log_placeholder.markdown(f"`{'<br>'.join(log_messages)}`", unsafe_allow_html=True)
+                         all_extracted_references.append({
+                            "Original Text Chunk": chunk,
+                            "Error": "Unhandled processing state"
+                         })
 
 
             # Finalize progress bar and status text
