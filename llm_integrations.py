@@ -62,7 +62,7 @@ def call_openai_api(api_key, text_chunk):
 
     # Explicitly set the desired model. Using gpt-4-turbo.
     # Ensure 'gpt-4-turbo' is the correct identifier for the model you intend.
-    model_name = "gpt-4-turbo" # Use the official model name
+    model_name = "o4-mini" # Use the official model name
 
     print(f"--- Attempting OpenAI API call with model: {model_name} ---")
 
